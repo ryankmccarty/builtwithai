@@ -151,7 +151,7 @@
             if (!JSONBIN_BIN_ID) return [];
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+                    headers: { 'X-Access-Key': JSONBIN_API_KEY }
                 });
                 const data = await res.json();
                 const entries = Array.isArray(data.record?.scores)
@@ -171,7 +171,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY
+                        'X-Access-Key': JSONBIN_API_KEY
                     },
                     body: JSON.stringify({ scores: entries })
                 });
