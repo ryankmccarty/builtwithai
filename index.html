@@ -154,7 +154,10 @@
                     headers: { 'X-Master-Key': JSONBIN_API_KEY }
                 });
                 const data = await res.json();
-                return Array.isArray(data.record) ? data.record : [];
+                const entries = Array.isArray(data.record?.scores)
+                    ? data.record.scores
+                    : [];
+                return entries;
             } catch (err) {
                 console.error('Failed to fetch leaderboard', err);
                 return [];
@@ -170,7 +173,7 @@
                         'Content-Type': 'application/json',
                         'X-Master-Key': JSONBIN_API_KEY
                     },
-                    body: JSON.stringify(entries)
+                    body: JSON.stringify({ scores: entries })
                 });
             } catch (err) {
                 console.error('Failed to save leaderboard', err);
