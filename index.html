@@ -147,6 +147,16 @@
         const JSONBIN_BIN_ID = '688543ce7b4b8670d8a7d415';
         const JSONBIN_API_KEY = '$2a$10$enEFUyODzFGcd2b4UBTsf.cowCe11cRkMBaf2En/LPHMuwnXt0FVq';
 
+        function deduplicate(entries) {
+            const seen = new Set();
+            return entries.filter(e => {
+                const key = `${e.name}|${e.score}|${e.ts}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
         async function fetchLeaderboard() {
             if (!JSONBIN_BIN_ID) return [];
             try {
@@ -157,7 +167,7 @@
                 const entries = Array.isArray(data.record?.scores)
                     ? data.record.scores
                     : [];
-                return entries;
+                return deduplicate(entries);
             } catch (err) {
                 console.error('Failed to fetch leaderboard', err);
                 return [];
@@ -356,8 +366,9 @@
             if (!name) return alert('Please enter your name');
             if (Date.now() - lastSubmit < 1000) return; // simple throttle
             lastSubmit = Date.now();
-            const entries = await fetchLeaderboard();
+            let entries = await fetchLeaderboard();
             entries.push({ name, score, ts: Date.now() });
+            entries = deduplicate(entries);
             entries.sort((a,b) => b.score - a.score);
             if (entries.length > 10) entries.length = 10;
             await saveLeaderboard(entries);
