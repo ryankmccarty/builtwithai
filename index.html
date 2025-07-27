@@ -264,7 +264,9 @@
             document.getElementById('scoreValue').textContent = score;
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('leaderboard').style.display = 'none';
-            restartInterval();
+            clearInterval(gameInterval);
+            gameInterval = null;
+            draw();
         }
 
         function endGame() {
