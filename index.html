@@ -145,13 +145,13 @@
         const highScoreKey = 'snakeHighScore';
         // Replace the placeholders below with your own JSONBin details.
         const JSONBIN_BIN_ID = '688543ce7b4b8670d8a7d415';
-        const JSONBIN_API_KEY = '$2a$10$uLlHaimhlI0Yz61oBxczyuwuQOzAKbapxVrokB3/xLQ9P.0/mM8ki';
+        const JSONBIN_API_KEY = '$2a$10$enEFUyODzFGcd2b4UBTsf.cowCe11cRkMBaf2En/LPHMuwnXt0FVq';
 
         async function fetchLeaderboard() {
             if (!JSONBIN_BIN_ID) return [];
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { 'X-Access-Key': JSONBIN_API_KEY }
+                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
                 });
                 const data = await res.json();
                 const entries = Array.isArray(data.record?.scores)
@@ -171,7 +171,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Access-Key': JSONBIN_API_KEY
+                        'X-Master-Key': JSONBIN_API_KEY
                     },
                     body: JSON.stringify({ scores: entries })
                 });
