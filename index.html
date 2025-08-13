@@ -48,67 +48,23 @@
     .accordion-content {display:none;padding:0 14px 14px}
     .accordion-content pre {white-space:pre-wrap;background:#f8f8f8;padding:12px;border-radius:8px;font-size:0.9rem}
 
-	    .ai-tools {
-    background-color: #faefe7;
-    padding: 60px 20px;
-    font-family: Arial, sans-serif;
-  }
-
-  .ai-tools-header {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 40px;
-  }
-
-  .ai-tools-header h2 {
-    font-size: 3rem;
-    font-weight: 900;
-    color: #111;
-    margin: 0;
-  }
-
-  .ai-tools-header .tag {
-    background-color: #c4e86b;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 1.2rem;
-    font-weight: bold;
-  }
-
-  .tools-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
-  }
-
-  .tool-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 25px;
-    background: white;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-weight: 900;
-    font-size: 1.1rem;
-    text-decoration: none;
-    color: black;
-    text-align: center;
-    transition: all 0.2s ease;
-  }
-
-  .tool-card:hover {
-    transform: translateY(-3px);
-    border-color: #c4e86b;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-  }
-
     #prompt-search {margin-bottom:20px;padding:10px;width:100%;border:1px solid var(--line);border-radius:8px;font-size:1rem}
 
     footer{padding:60px 0}
     .foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted)}
+
+	  /* ===== AI Tool Library ===== */
+    :root{--blush:#f6ece4;--tag:#c6ea6b}
+    .ai-tools{background:var(--blush);border-top:1px solid var(--line)}
+    .ai-tools-wrap{padding:64px 0}
+    .ai-tools-title{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:0 0 28px;font-size:clamp(2.2rem,6vw,4.6rem);line-height:.95;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;color:#111}
+    .ai-tag{display:inline-block;background:var(--tag);color:#0f0f0f;padding:10px 18px;border-radius:10px;font-size:clamp(.9rem,1.6vw,1.25rem);font-weight:800;text-transform:none}
+    .tools-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:22px}
+    .tool-card{display:flex;align-items:center;justify-content:center;min-height:84px;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:14px;box-shadow:0 2px 0 rgba(0,0,0,.04);font-weight:900;letter-spacing:.02em;text-decoration:none;color:#111;text-align:center;padding:16px}
+    .tool-card:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(0,0,0,.08);border-color:#d9d9de}
+    @media (max-width:1200px){.tools-grid{grid-template-columns:repeat(4,1fr)}}
+    @media (max-width:900px){.tools-grid{grid-template-columns:repeat(3,1fr)}}
+    @media (max-width:600px){.tools-grid{grid-template-columns:repeat(2,1fr)}}
 
     /* Cursor trail canvas sits above content but under the sticky header */
     #cursor-trail{position:fixed;inset:0;pointer-events:none;z-index:35}
@@ -121,12 +77,6 @@
 <body>
   <!-- Cursor trail canvas -->
   <canvas id="cursor-trail" aria-hidden="true"></canvas>
-
-  <header>
-    <div class="container nav">
-      <a class="brand" href="#" aria-label="Studio AI home"><span class="dot" aria-hidden="true"></span><span>#ai-for-creatives</span></a>
-    </div>
-  </header>
 
   <main>
     <section class="hero">
@@ -233,29 +183,33 @@ Reply with: “Please enter your meeting transcript and I will start the analysi
       </div>
     </section>
 
-<section class="ai-tools">
-  <div class="ai-tools-header">
-    <h2><span class="tag">For Creatives</span> AI Tool Library</h2>
-  </div>
-  
-  <div class="tools-grid">
-    <a href="#" class="tool-card">LOVABLE</a>
-    <a href="#" class="tool-card">CHATGPT</a>
-    <a href="#" class="tool-card">V0</a>
-    <a href="#" class="tool-card">MIDJOURNEY</a>
-    <a href="#" class="tool-card">RUNWAY</a>
-    <a href="#" class="tool-card">PERPLEXITY</a>
-    <a href="#" class="tool-card">POE</a>
-    <a href="#" class="tool-card">NOTION AI</a>
-    <a href="#" class="tool-card">FIGMA AI</a>
-    <a href="#" class="tool-card">SORA</a>
-    <a href="#" class="tool-card">KREA</a>
-    <a href="#" class="tool-card">CLOUDFLARE AI</a>
-  </div>
-</section>
-
-
-	
+<!-- AI TOOL LIBRARY (inspo-alike) -->
+    <section id="ai-tools" class="ai-tools">
+      <div class="ai-tools-wrap">
+        <div class="container">
+          <div class="ai-tools-head">
+            <h2 class="ai-tools-title">
+              <span class="ai-tag" aria-label="For Creatives">For Creatives</span>
+              <span>AI Tool Library</span>
+            </h2>
+          </div>
+          <div class="tools-grid">
+            <a class="tool-card" href="#">LOVABLE</a>
+            <a class="tool-card" href="#">CHATGPT</a>
+            <a class="tool-card" href="#">V0</a>
+            <a class="tool-card" href="#">MIDJOURNEY</a>
+            <a class="tool-card" href="#">RUNWAY</a>
+            <a class="tool-card" href="#">PERPLEXITY</a>
+            <a class="tool-card" href="#">POE</a>
+            <a class="tool-card" href="#">NOTION AI</a>
+            <a class="tool-card" href="#">FIGMA AI</a>
+            <a class="tool-card" href="#">SORA</a>
+            <a class="tool-card" href="#">KREA</a>
+            <a class="tool-card" href="#">CLOUDFLARE AI</a>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
