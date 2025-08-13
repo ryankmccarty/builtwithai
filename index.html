@@ -35,37 +35,32 @@
     .hero-art{background:linear-gradient(180deg,#fafafa,#f5f5f7);border:1px solid var(--line);border-radius:28px;padding:20px;box-shadow:var(--shadow)}
     .device{aspect-ratio:16/10;border-radius:18px;background:radial-gradient(1200px 300px at 50% -20%, #d0e7ff 10%, transparent 60%),linear-gradient(135deg,#edf4ff,#f7fbff);border:1px solid var(--line)}
 
-    .logos{padding:26px 0;border-bottom:1px solid var(--line)}
-    .logos .row{display:grid;grid-template-columns:repeat(6,1fr);gap:20px}
-    .logo-tile{height:46px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:600}
-
     section{padding:86px 0;border-bottom:1px solid var(--line)}
     h2{font-size:clamp(1.6rem,2.8vw,2.6rem);line-height:1.1;margin:0 0 14px;letter-spacing:-.01em}
     p.section-lead{color:#1d1d1f;opacity:.8;margin:0 0 26px}
 
     .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
-    .icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(180deg,#fff, #f0f0f0);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
-
-    .demo{display:flex;flex-direction:column;gap:12px}
-    .demo .screen{height:220px;border-radius:18px;background:linear-gradient(180deg,#fafafa,#f2f2f7);border:1px solid var(--line)}
-
-    .quote-wrap{max-width:900px;margin:0 auto;text-align:center}
-    .quote{font-size:1.4rem;line-height:1.35;letter-spacing:-.01em}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow);text-decoration:none;color:inherit}
+    .icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(180deg,#fff, #f0f0f0);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.2rem}
 
     footer{padding:60px 0}
     .foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted)}
 
+    /* Cursor trail canvas sits above content but under the sticky header */
+    #cursor-trail{position:fixed;inset:0;pointer-events:none;z-index:35}
+
     @media (max-width: 980px){
       .hero-wrap,.grid-3{grid-template-columns:1fr}
-      .logos .row{grid-template-columns:repeat(3,1fr)}
     }
   </style>
 </head>
 <body>
+  <!-- Cursor trail canvas -->
+  <canvas id="cursor-trail" aria-hidden="true"></canvas>
+
   <header>
     <div class="container nav">
-      <a class="brand" href="#" aria-label="Studio AI home"><span class="dot" aria-hidden="true"></span><span>Ryan McCarty</span></a>
+      <a class="brand" href="#" aria-label="Studio AI home"><span class="dot" aria-hidden="true"></span><span>ryankm</span></a>
     </div>
   </header>
 
@@ -75,7 +70,7 @@
         <div>
           <div class="kicker">AI for everyday work</div>
           <h1>Make more with AI.</h1>
-          <p class="lead">Think faster, write better, design quicker. Studio AI brings creation, automation, and collaboration together so you can focus on the work that matters. By integrating AI into our workflows, we unlock new creative possibilities, amplify productivity, and remove the friction between ideas and execution.</p>
+          <p class="lead">Think faster, design smarter, and explore creative boundaries. Integrating AI into your workflow can transform ideas into experiences that inspire and deliver value.</p>
         </div>
         <aside class="hero-art">
           <div class="device" role="img" aria-label="AI workspace preview"></div>
@@ -83,63 +78,106 @@
       </div>
     </section>
 
-    <div class="logos">
+    <section id="examples">
       <div class="container">
-        <div class="row">
-          <div class="logo-tile">Design</div>
-          <div class="logo-tile">Experience</div>
-          <div class="logo-tile">Marketing</div>
-          <div class="logo-tile">Product</div>
-          <div class="logo-tile">Development</div>
-          <div class="logo-tile">Support</div>
+        <h2>Explore AI in Action</h2>
+        <p class="section-lead">See examples of interactive AI projects that showcase creativity, efficiency, and innovation.</p>
+        <div class="grid-3">
+          <a href="#uiquiz" class="card">
+            <div class="icon">📝</div>
+            <h3>UX Principles Quiz</h3>
+            <p class="muted">Test your design knowledge with AI‑generated UX scenarios and feedback.</p>
+          </a>
+          <a href="beehive.html" class="card">
+            <div class="icon">🐝</div>
+            <h3>Beehive Simulator</h3>
+            <p class="muted">Watch AI simulate the complex dynamics of a thriving bee colony.</p>
+          </a>
+          <a href="#design-helper" class="card">
+            <div class="icon">🎨</div>
+            <h3>TBD</h3>
+            <p class="muted">TBD</p>
+          </a>
         </div>
       </div>
-    </div>
-
-<section id="create">
-  <div class="container">
-    <h2>Example Projects</h2>
-    <p class="section-lead">Share context, keep version history, and co‑create across teams. AI acts as a connective tissue between disciplines, enabling a shared language for innovation.</p>
-    <div class="grid-3">
-      <a class="card" href="beehive.html">
-        <div class="icon">✏️</div>
-        <h3>Beehive Simulation</h3>
-        <p class="muted">Make a visual simulation of a beehive construction, showing hexagonal cells forming, worker bee paths, and honey storage. Include sliders for colony size and resource availability. Put everything in a standalone html file.</p>
-      </a>
-      <a class="card" href="#uigame.html">
-        <div class="icon">🎨</div>
-        <h3>UX Quiz</h3>
-        <p class="muted">A fast-paced “spot the better design” game where players are shown two UI mockups side-by-side and must click the one that follows a specific UX law (e.g., Fitts’s Law, Hick’s Law, Gestalt principles).</p>
-      </a>
-      <a class="card" href="#research-summarize">
-        <div class="icon">🧠</div>
-        <h3>UI Dashboard</h3>
-        <p class="muted">You know.</p>
-      </a>
-    </div>
-  </div>
-</section>
-
- 
-
-    <section>
-      <div class="container quote-wrap">
-        <p class="quote">“AI took the friction out of our day. Our team ships better work, faster—and actually enjoys the process again.”</p>
-        <p class="muted">— Some dude</p>
-      </div>
     </section>
-
-
   </main>
 
   <footer>
     <div class="container foot">
-      <div>© <span id="y"></span> Ryan McCarty</div>
+      <div>© <span id="y"></span> Studio AI</div>
     </div>
   </footer>
 
   <script>
+    // Footer year
     document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Cursor trail (disabled on touch + reduced motion)
+    (function(){
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      if (prefersReduced || touch) return; // respect user settings & mobile
+
+      const canvas = document.getElementById('cursor-trail');
+      const ctx = canvas.getContext('2d');
+      let w, h, dpr;
+
+      function resize(){
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = canvas.width = Math.floor(innerWidth * dpr);
+        h = canvas.height = Math.floor(innerHeight * dpr);
+        canvas.style.width = innerWidth + 'px';
+        canvas.style.height = innerHeight + 'px';
+        ctx.scale(dpr, dpr);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const colors = [
+        'rgba(0,113,227,0.18)',   // Apple blue
+        'rgba(90,200,250,0.16)',  // light blue
+        'rgba(175,82,222,0.16)',  // purple
+        'rgba(52,199,89,0.14)'    // green
+      ];
+
+      const dots = [];
+      let lastX = innerWidth/2, lastY = innerHeight/2;
+
+      window.addEventListener('pointermove', (e)=>{
+        lastX = e.clientX; lastY = e.clientY;
+        spawn(lastX, lastY, e.movementX, e.movementY);
+      }, {passive:true});
+
+      function spawn(x, y, mx=0, my=0){
+        for(let i=0;i<2;i++){
+          dots.push({
+            x, y,
+            vx:(mx*0.12)+(Math.random()-0.5)*0.6,
+            vy:(my*0.12)+(Math.random()-0.5)*0.6,
+            life:1,
+            r: 8 + Math.random()*8,
+            c: colors[(Math.random()*colors.length)|0]
+          });
+        }
+      }
+
+      function tick(){
+        ctx.clearRect(0,0,innerWidth,innerHeight);
+        for(let i=dots.length-1;i>=0;i--){
+          const p = dots[i];
+          p.x += p.vx; p.y += p.vy; p.vy += 0.02; // slight gravity
+          p.r *= 0.985; p.life *= 0.965;
+          if (p.life < 0.06 || p.r < 0.8){ dots.splice(i,1); continue; }
+          ctx.beginPath();
+          ctx.fillStyle = p.c.replace(/0\.1\d+|0\.\d+/, (m)=> (parseFloat(m)*p.life).toFixed(3));
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+          ctx.fill();
+        }
+        requestAnimationFrame(tick);
+      }
+      tick();
+    })();
   </script>
 </body>
 </html>
