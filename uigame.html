@@ -1,0 +1,868 @@
+Here you go—fully self-contained “Spot the Better Design” game in one HTML file. It starts easy, ramps to nuanced rounds, scores based on speed, and sprinkles in “both are bad” bonus rounds that ask for a short explanation.
+
+Just save as `ux-spot-the-better-design.html` and open in a browser. Have fun 🕵️‍♂️🎯
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Spot the Better Design — UX Laws Game</title>
+<style>
+  :root{
+    --bg:#0f1220; --panel:#161a2e; --panel-2:#1b2040; --text:#e9ecf7;
+    --muted:#aab0d3; --accent:#7bd389; --accent-2:#6bc1ff; --warn:#ffb86b; --bad:#ff6b6b;
+    --card:#0f1329; --good:#2ecc71;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:radial-gradient(1200px 800px at 20% -10%,#1e2450 0%,#0f1220 40%,#0b0e1a 100%);
+    color:var(--text); font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+  }
+  header{
+    position:sticky; top:0; z-index:10; backdrop-filter:saturate(1.1) blur(8px);
+    background:linear-gradient(180deg,rgba(10,12,24,.85),rgba(10,12,24,.35));
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:16px 20px}
+  h1{font-size:20px;margin:0 0 6px 0}
+  .sub{display:flex; gap:12px; align-items:center; flex-wrap:wrap; color:var(--muted); font-size:14px}
+  .chip{padding:6px 10px; border:1px solid rgba(255,255,255,.12); border-radius:14px; background:rgba(255,255,255,.04)}
+  .accent{border-color:rgba(123,211,137,.4); background:rgba(123,211,137,.12); color:#c7f5d2}
+  .accent2{border-color:rgba(107,193,255,.35); background:rgba(107,193,255,.12); color:#d5ecff}
+  .warn{border-color:rgba(255,184,107,.35); background:rgba(255,184,107,.12); color:#ffe5c9}
+
+  .hud{display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px}
+  .score, .level, .timer{display:flex; align-items:center; gap:8px}
+  .bar{height:10px; width:260px; background:#232742; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.07)}
+  .bar>i{display:block; height:100%; width:100%; background:linear-gradient(90deg,var(--accent), #62e3f7); transition:width .15s linear}
+
+  main{max-width:1100px;margin:18px auto;padding:0 20px 28px}
+  .prompt{
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px 16px; color:#dfe3fb;
+  }
+
+  .grid{
+    margin-top:18px; display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  }
+  .panel{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .panel h3{font-size:13px; font-weight:600; letter-spacing:.02em; margin:0 0 8px; color:var(--muted)}
+  .mock{ height:360px; background:linear-gradient(180deg,#0c1022,#0b0f21);
+    border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; position:relative; overflow:hidden;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    cursor:pointer;
+  }
+  .mock:hover{ transform:translateY(-2px); box-shadow:0 10px 20px rgba(0,0,0,.35); border-color:rgba(255,255,255,.16)}
+  .mock .badge{position:absolute; top:10px; right:10px; font-size:11px; color:#cfd6ff; background:rgba(255,255,255,.06); padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.08)}
+  .sideLabel{position:absolute; left:12px; top:10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:4px 8px; font-size:11px; color:#cbd2ff}
+
+  .choices{ display:flex; gap:10px; margin-top:10px; justify-content:center; align-items:center; }
+  .btn{
+    border-radius:12px; padding:10px 14px; border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06); color:var(--text); cursor:pointer; font-weight:600; letter-spacing:.01em;
+    transition:transform .08s ease, background .12s ease, border-color .12s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); background:rgba(255,255,255,.1); }
+  .btn.good{ border-color:rgba(46, 204, 113,.4); background:rgba(46,204,113,.15)}
+  .btn.warn{ border-color:rgba(255,184,107,.4); background:rgba(255,184,107,.15)}
+  .btn.bad{  border-color:rgba(255,107,107,.45); background:rgba(255,107,107,.18)}
+  .btn.ghost{ background:transparent }
+
+  .toast{
+    position:fixed; right:18px; bottom:18px; background:rgba(23,27,55,.95); color:#e8ebff;
+    padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.1); box-shadow:0 12px 28px rgba(0,0,0,.35);
+    display:none; z-index:9999; max-width:320px;
+  }
+
+  dialog{
+    border:none; border-radius:18px; background:linear-gradient(180deg,#111634,#0b0f23);
+    color:var(--text); width:min(680px,92vw); padding:0; box-shadow:0 20px 60px rgba(0,0,0,.55);
+  }
+  dialog::backdrop{background:rgba(4,6,14,.65); backdrop-filter:blur(4px)}
+  .dlg-hd{padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.07); display:flex; justify-content:space-between; align-items:center}
+  .dlg-bd{padding:16px}
+  .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#101530; border:1px solid rgba(255,255,255,.1); padding:1px 6px; border-radius:6px; font-size:12px; color:#b9c0ff}
+  textarea{width:100%; min-height:120px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:#0d1230; color:var(--text); padding:12px; outline:none}
+  .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1)}
+  .muted{color:var(--muted)}
+  .result{
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px 16px; margin-top:18px;
+  }
+  .reviewItem{border:1px dashed rgba(255,255,255,.15); border-radius:12px; padding:12px; margin-top:10px}
+  .small{font-size:13px; color:#cfd3f3}
+  .hidden{display:none}
+  .footerNote{margin-top:26px; color:#b6bcdd; font-size:13px}
+  .lawHint{cursor:help; text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Spot the Better Design <span class="muted">· UX Laws</span></h1>
+    <div class="sub">
+      <span class="chip accent" id="lawChip">Law: —</span>
+      <span class="chip">Round <b id="roundN">1</b>/<b id="roundTotal">—</b></span>
+      <span class="chip accent2" id="difficultyChip">Difficulty: —</span>
+      <span class="chip warn" id="twistChip" title="Sometimes neither option is good — catch those rounds for bonus points.">Twist enabled</span>
+    </div>
+    <div class="hud">
+      <div class="level">
+        <span class="pill"><strong>Level</strong> <span id="levelName">—</span></span>
+      </div>
+      <div class="timer">
+        <span class="pill">Time</span>
+        <div class="bar"><i id="timeBar" style="width:100%"></i></div>
+        <span id="timeText" class="muted">12.0s</span>
+      </div>
+      <div class="score">
+        <span class="pill">Score <strong id="score">0</strong></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="prompt" id="prompt">Spot the interface that better follows the target UX law.</div>
+
+  <div class="grid">
+    <div class="panel">
+      <h3>Option A</h3>
+      <div class="mock" id="mockA" aria-label="Option A">
+        <span class="sideLabel">A</span>
+      </div>
+      <button class="btn good" id="pickA">Choose A</button>
+    </div>
+    <div class="panel">
+      <h3>Option B</h3>
+      <div class="mock" id="mockB" aria-label="Option B">
+        <span class="sideLabel">B</span>
+      </div>
+      <button class="btn good" id="pickB">Choose B</button>
+    </div>
+  </div>
+
+  <div class="choices" id="bothBadWrap">
+    <button class="btn bad" id="bothBadBtn">Both are bad (explain)</button>
+  </div>
+
+  <div id="feedback" class="result hidden"></div>
+
+  <div class="footerNote">
+    Pro tip: after answering, press <span class="kbd">N</span> for next round. Toggle quick definitions with <span class="kbd">D</span>.
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal for "both are bad" explanation -->
+<dialog id="explainDlg">
+  <div class="dlg-hd">
+    <strong>Bonus Round · Explain why both options are poor</strong>
+    <button class="btn ghost" id="closeDlg" aria-label="Close">✕</button>
+  </div>
+  <div class="dlg-bd">
+    <p class="muted small" id="explainPrompt">Briefly describe the issues you see. Hints: accessibility, contrast, target size, proximity, cognitive load, affordance, feedback, hierarchy…</p>
+    <textarea id="explainTxt" placeholder="Type your reasoning here…"></textarea>
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px">
+      <button class="btn" id="cancelExplain">Cancel</button>
+      <button class="btn warn" id="submitExplain">Submit for bonus</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Modal for quick law definitions -->
+<dialog id="defsDlg">
+  <div class="dlg-hd">
+    <strong>Quick Definitions</strong>
+    <button class="btn ghost" id="closeDefs" aria-label="Close">✕</button>
+  </div>
+  <div class="dlg-bd" id="defsBody"></div>
+</dialog>
+
+<script>
+/** ------------------------------------------------------------
+ *  UX Laws Game — Spot the Better Design
+ *  All-in-one file. No libraries.
+ *  ------------------------------------------------------------ */
+
+const LAWS = {
+  "Fitts's Law": "Time to acquire a target is a function of target size and distance. Bigger, closer targets are faster to hit.",
+  "Hick's Law": "Decision time increases with the number and complexity of choices.",
+  "Gestalt: Proximity": "Elements close to each other are perceived as a group.",
+  "Gestalt: Similarity": "Similar elements are perceived as related or part of the same group.",
+  "Gestalt: Common Region": "Elements enclosed in the same region are perceived as grouped.",
+  "Miller's Law": "The average person can hold ~7±2 items in working memory; chunk information.",
+  "Jakob's Law": "Users spend most time on other sites; they prefer your site to work like others they know.",
+  "Law of Prägnanz": "People will perceive and interpret ambiguous images as the simplest form(s) possible.",
+  "Tesler's Law": "Every application has an inherent amount of irreducible complexity; distribute it wisely.",
+  "Postel's Law": "Be liberal in what you accept, conservative in what you send (robustness principle)."
+};
+
+const DIFF = {
+  1: "Intro",
+  2: "Beginner",
+  3: "Intermediate",
+  4: "Advanced",
+  5: "Real-world nuance"
+};
+
+// Utility for mini “UI blocks” inside mocks
+function el(tag, attrs={}, children=[]){
+  const n = document.createElement(tag);
+  for(const k in attrs){
+    if(k === "style") Object.assign(n.style, attrs[k]);
+    else if(k.startsWith("on")) n.addEventListener(k.slice(2), attrs[k]);
+    else if(k === "dataset") Object.assign(n.dataset, attrs[k]);
+    else n.setAttribute(k, attrs[k]);
+  }
+  (Array.isArray(children) ? children : [children]).filter(Boolean).forEach(c => {
+    if(typeof c === "string") n.appendChild(document.createTextNode(c));
+    else n.appendChild(c);
+  });
+  return n;
+}
+function randSeeded(seed){ // deterministic pseudo RNG for layout variations
+  let x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+// ---- Round Renderers -------------------------------------------------
+// Each renderer draws two variants (A/B) that differ on the target law.
+// Keep visuals simple but legible.
+
+const Renderers = {
+  fitts({good='A', seed=1}){
+    // Toolbar with primary action: bigger/closer vs tiny/far
+    const make = (better) => {
+      const wrap = el('div',{class:'mock'});
+      const bar = el('div',{style:{
+        position:'absolute', top:'18px', left:'16px', right:'16px', height:'42px',
+        background:'#0e1430', border:'1px solid rgba(255,255,255,.08)', borderRadius:'10px',
+        display:'flex', alignItems:'center', gap:'8px', padding:'8px'
+      }});
+      const addBtn = (w=90,txt='Save', primary=false, right=false)=>{
+        const b = el('div',{style:{
+          marginLeft:right?'auto':'0',
+          width:w+'px', height:'26px', borderRadius:'7px',
+          background: primary ? 'linear-gradient(180deg,#2fdc98,#22b07b)' : 'linear-gradient(180deg,#1a2350,#141b3f)',
+          border:`1px solid rgba(255,255,255,${primary?.5:.08})`,
+          color:primary?'#0b1a14':'#cfe4ff', fontWeight:700, fontSize:'12px',
+          display:'flex',alignItems:'center',justifyContent:'center', boxShadow:primary?'0 6px 14px rgba(47,220,152,.3)':'none'
+        }}, txt);
+        bar.appendChild(b);
+      };
+      const list = el('div',{style:{
+        position:'absolute', left:'16px', right:'16px', top:'76px', bottom:'16px',
+        display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'
+      }});
+      for(let i=0;i<6;i++){
+        list.appendChild(el('div',{style:{
+          background:'#0f1737', border:'1px solid rgba(255,255,255,.06)', borderRadius:'10px'
+        }}));
+      }
+      // Better: larger primary action near the cursor region (bottom-right or bottom)
+      const betterPrimaryRight = seed%2===0;
+      if(better){
+        addBtn(120,'Save',true,betterPrimaryRight); addBtn(78,'Cancel',false,false);
+      }else{
+        addBtn(72,'Save',true,false); addBtn(78,'Cancel',false,true);
+      }
+      wrap.append(bar, list);
+      return wrap;
+    };
+    return {
+      A: (good==='A') ? make(true) : make(false),
+      B: (good==='B') ? make(true) : make(false),
+      rationale: "Per Fitts’s Law, larger (and closer) primary actions reduce acquisition time. The better option surfaces a bigger primary action positioned where the pointer likely is."
+    };
+  },
+
+  hick({good='A', seed=2}){
+    // Menu: many flat choices vs chunked groups
+    const make = (chunked)=>{
+      const wrap = el('div',{class:'mock'});
+      const header = el('div',{style:{
+        position:'absolute', top:'14px', left:'14px', right:'14px', height:'40px',
+        border:'1px solid rgba(255,255,255,.08)', borderRadius:'10px',
+        background:'#0e1430', display:'flex', alignItems:'center', gap:'8px', padding:'8px'
+      }}, [el('div',{style:{width:'80px',height:'24px',borderRadius:'6px',background:'#1b275a',border:'1px solid rgba(255,255,255,.08)'}},'Logo')]);
+      wrap.appendChild(header);
+      const menu = el('div',{style:{
+        position:'absolute', top:'64px', left:'14px', bottom:'14px', width:'220px',
+        border:'1px solid rgba(255,255,255,.08)', borderRadius:'10px', background:'#0e1430',
+        padding:'10px', display:'flex', flexDirection:'column', gap:'8px', overflow:'hidden'
+      }});
+      const addItem=(w, label)=>{
+        return el('div',{style:{
+          height:'28px', borderRadius:'6px', background:'#151c3f',
+          border:'1px solid rgba(255,255,255,.07)', color:'#cfe4ff', display:'flex',
+          alignItems:'center', padding:'0 8px', width: w+'%'
+        }}, label||'');
+      };
+      if(chunked){
+        menu.append(
+          el('div',{style:{color:'#9fb3ff',fontSize:'12px',margin:'4px 6px'}},'Profile'),
+          addItem(95,'Account'), addItem(88,'Security'),
+          el('div',{style:{color:'#9fb3ff',fontSize:'12px',margin:'6px 6px 0'}},'Content'),
+          addItem(96,'Posts'), addItem(86,'Media'), addItem(70,'Categories'),
+          el('div',{style:{color:'#9fb3ff',fontSize:'12px',margin:'6px 6px 0'}},'Support'),
+          addItem(90,'Docs'), addItem(80,'Contact')
+        );
+      } else {
+        for(let i=0;i<12;i++){ menu.append(addItem( 70 + (i%5)*6, 'Item '+(i+1))); }
+      }
+      wrap.appendChild(menu);
+      return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Hick’s Law: grouping (chunking) reduces perceived choices and speeds decisions compared to a long, flat list."
+    };
+  },
+
+  proximity({good='A', seed=3}){
+    // Form labels closer to their inputs vs spaced out
+    const make = (good)=>{
+      const wrap = el('div',{class:'mock'});
+      const form = el('div',{style:{
+        position:'absolute', inset:'14px', display:'grid',
+        gridTemplateColumns:'1fr 1fr', gap:'14px'
+      }});
+      const field=(label, tight=true)=>{
+        const box = el('div',{style:{display:'flex', flexDirection:'column', gap: tight? '6px':'22px'}},[
+          el('div',{style:{height:'12px', width:'40%', background:'#24306b', borderRadius:'5px', border:'1px solid rgba(255,255,255,.08)'}}, label),
+          el('div',{style:{height:'34px', background:'#11183a', border:'1px solid rgba(255,255,255,.1)', borderRadius:'8px'}})
+        ]);
+        return box;
+      };
+      form.append(field('First Name', good), field('Last Name', good), field('Email', good), field('Phone', good));
+      wrap.append(form);
+      return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Gestalt Proximity: keeping labels close to their inputs improves association and reduces cognitive load."
+    };
+  },
+
+  commonRegion({good='A', seed=4}){
+    // Cards with tags: grouped by a container vs scattered chips
+    const make = (grouped)=>{
+      const wrap = el('div',{class:'mock'});
+      const card = el('div',{style:{
+        position:'absolute', top:'16px', left:'16px', right:'16px', bottom:'16px',
+        border:'1px solid rgba(255,255,255,.08)', borderRadius:'12px', background:'#0f1533', padding:'12px'
+      }});
+      const title = el('div',{style:{width:'50%', height:'16px', background:'#24306b', borderRadius:'6px', margin:'6px 0 12px'}});
+      const chips = el('div',{style:{
+        display:'flex', flexWrap:'wrap', gap:'8px', marginTop:'8px'
+      }});
+      function chip(){ return el('div',{style:{
+        height:'22px', padding:'0 10px', borderRadius:'999px',
+        background:'#151c3f', border:'1px solid rgba(255,255,255,.09)'
+      }},'Tag'); }
+      for(let i=0;i<10;i++) chips.appendChild(chip());
+      card.append(title);
+      if(grouped){
+        const region = el('div',{style:{
+          border:'1px dashed rgba(107,193,255,.6)', background:'rgba(107,193,255,.08)',
+          borderRadius:'10px', padding:'10px'
+        }}, [chips]);
+        card.append(region);
+      } else {
+        chips.style.marginTop='22px';
+        card.append(chips);
+      }
+      wrap.append(card); return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Gestalt Common Region: enclosing related elements in a shared container helps users perceive them as a unit."
+    };
+  },
+
+  similarity({good='A', seed=5}){
+    // Mixed button styles vs consistent styling for same semantic level
+    const make = (consistent)=>{
+      const wrap = el('div',{class:'mock'});
+      const area = el('div',{style:{position:'absolute', inset:'16px', display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'12px'}});
+      function btn(styleType){
+        const base = {height:'34px', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'700', color:'#d9e9ff', border:'1px solid rgba(255,255,255,.1)'};
+        let bg='#17214a';
+        if(styleType==='primary'){ bg='linear-gradient(180deg,#6bc1ff,#4ea6ee)'; base.color='#07121d'; base.border='none';}
+        if(styleType==='danger'){ bg='linear-gradient(180deg,#ff6b6b,#ff8756)'; base.border='none';}
+        if(styleType==='subtle'){ bg='#12183a'; }
+        return el('div',{style:Object.assign(base,{background:bg})},'Action');
+      }
+      if(consistent){
+        for(let i=0;i<6;i++) area.append(btn('subtle'));
+      }else{
+        area.append(btn('primary'), btn('subtle'), btn('danger'), btn('subtle'), btn('primary'), btn('subtle'));
+      }
+      wrap.append(area); return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Gestalt Similarity: similar look implies similar function. Consistent affordances reduce errors."
+    };
+  },
+
+  miller({good='A', seed=6}){
+    // Checkout steps: chunked vs everything at once
+    const make = (chunk)=>{
+      const wrap = el('div',{class:'mock'});
+      const steps = el('div',{style:{
+        position:'absolute', top:'16px', left:'16px', right:'16px', height:'38px',
+        display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'8px'
+      }});
+      function step(active=false){
+        return el('div',{style:{
+          borderRadius:'8px', background: active?'linear-gradient(180deg,#7bd389,#53ad75)':'#12183a', border:'1px solid rgba(255,255,255,.1)'
+        }});
+      }
+      if(chunk){ steps.append(step(true), step(), step(), step()); }
+      else { steps.append(step(true), step(true), step(true), step(true)); }
+      const content = el('div',{style:{
+        position:'absolute', top:'64px', left:'16px', right:'16px', bottom:'16px',
+        border:'1px solid rgba(255,255,255,.08)', borderRadius:'12px', background:'#0e1430',
+        display:'grid', gridTemplateColumns: chunk?'1fr':'1fr 1fr', gap:'12px', padding:'12px'
+      }});
+      for(let i=0;i<(chunk?4:10);i++){
+        content.append(el('div',{style:{borderRadius:'8px', background:'#0f1737', border:'1px solid rgba(255,255,255,.06)'}}));
+      }
+      wrap.append(steps, content); return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Miller’s Law: breaking a complex task into chunks reduces working-memory demand and error rate."
+    };
+  },
+
+  jakob({good='A', seed=7}){
+    // Search placement & common patterns: familiar vs novel but inconsistent layouts
+    const make = (familiar)=>{
+      const wrap = el('div',{class:'mock'});
+      const header = el('div',{style:{
+        position:'absolute', top:'12px', left:'12px', right:'12px', height:'44px',
+        display:'grid', gridTemplateColumns: familiar?'140px 1fr 140px':'1fr 160px 1fr', gap:'10px'
+      }});
+      const box=(w)=> el('div',{style:{borderRadius:'8px', background:'#12183a', border:'1px solid rgba(255,255,255,.1)'}});
+      if(familiar){
+        header.append(box(), el('div',{style:{
+          borderRadius:'10px', background:'#0f1533', border:'1px solid rgba(255,255,255,.12)'
+        }}, '   '), box());
+      } else {
+        header.append(box(), box(), el('div',{style:{
+          borderRadius:'10px', background:'#0f1533', border:'1px solid rgba(255,255,255,.12)'
+        }}));
+      }
+      const grid = el('div',{style:{
+        position:'absolute', top:'64px', left:'12px', right:'12px', bottom:'12px',
+        display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'10px'
+      }});
+      for(let i=0;i<9;i++) grid.append(box());
+      wrap.append(header, grid); return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Jakob’s Law: familiar, conventional patterns (e.g., search where users expect it) improve efficiency over idiosyncratic layouts."
+    };
+  },
+
+  pragnanz({good='A', seed=8}){
+    // Visual hierarchy: clear simple layout vs clutter and equal weighting
+    const make = (simple)=>{
+      const wrap = el('div',{class:'mock'});
+      const area = el('div',{style:{position:'absolute', inset:'14px'}});
+      const title = el('div',{style:{
+        height:'22px', width: simple?'60%':'95%', background:'#2a3a7d', borderRadius:'8px', marginBottom:'12px',
+      }});
+      const cols = el('div',{style:{
+        display:'grid', gridTemplateColumns: simple?'2fr 1fr':'1fr 1fr 1fr', gap:'10px'
+      }});
+      for(let i=0;i<(simple?6:9);i++){
+        cols.append(el('div',{style:{height:'52px', borderRadius:'10px', background:'#10183d', border:'1px solid rgba(255,255,255,.08)'}}));
+      }
+      area.append(title, cols); wrap.append(area); return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Law of Prägnanz: simpler, well-structured layouts are easier to parse than cluttered, uniform noise."
+    };
+  },
+
+  tesler({good='A', seed=9}){
+    // Settings: hide advanced behind details vs forcing all complexity upfront
+    const make = (distribute)=>{
+      const wrap = el('div',{class:'mock'});
+      const list = el('div',{style:{position:'absolute', inset:'14px', display:'flex', flexDirection:'column', gap:'10px'}});
+      function row(expanded=false){
+        const r = el('div',{style:{border:'1px solid rgba(255,255,255,.1)', background:'#0f1533', borderRadius:'10px', padding:'10px', display:'grid', gap:'10px'}});
+        r.append(el('div',{style:{height:'16px', width:'40%', background:'#253372', borderRadius:'6px'}}));
+        if(expanded){
+          const adv = el('div',{style:{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px'}});
+          for(let i=0;i<6;i++) adv.append(el('div',{style:{height:'32px', borderRadius:'8px', background:'#10183d', border:'1px solid rgba(255,255,255,.08)'}}));
+          r.append(adv);
+        }
+        return r;
+      }
+      if(distribute){ list.append(row(true), row(false), row(false)); }
+      else { list.append(row(true), row(true), row(true)); }
+      wrap.append(list); return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Tesler’s Law: don’t force all complexity onto the user at once; reveal advanced controls progressively."
+    };
+  },
+
+  postel({good='A', seed=10}){
+    // Form validation: forgiving input vs brittle exact format
+    const make = (forgiving)=>{
+      const wrap = el('div',{class:'mock'});
+      const field = el('div',{style:{position:'absolute', left:'16px', right:'16px', top:'40%', transform:'translateY(-50%)'}});
+      const input = el('div',{style:{height:'38px', borderRadius:'8px', background:'#0f1533', border:'1px solid rgba(255,255,255,.12)'}});
+      const hint = el('div',{style:{marginTop:'8px', fontSize:'12px', color: forgiving? '#bdf7d0' : '#ffc7c7'}},
+        forgiving ? "Accepts: (123) 456-7890, 123-456-7890, 1234567890" : "Format must be (###) ###-#### exactly"
+      );
+      field.append(input, hint);
+      wrap.append(field); return wrap;
+    };
+    return {
+      A:(good==='A')?make(true):make(false),
+      B:(good==='B')?make(true):make(false),
+      rationale:"Postel’s Law: be liberal in what you accept—robust systems accept reasonable variants rather than failing rigidly."
+    };
+  }
+};
+
+// ---- Rounds: define a progression with a few “both bad” twists ----------
+/** Round schema:
+ * { law, renderer, good: 'A'|'B'|null (for both-bad), prompt, diff, twist:bool, keywords?:[] }
+ */
+const ROUNDS = [
+  {law:"Fitts's Law", renderer:'fitts', good:'A', prompt:"Which toolbar makes the primary action faster to hit?", diff:1},
+  {law:"Hick's Law", renderer:'hick', good:'B', prompt:"Which navigation will help people decide faster?", diff:1},
+  {law:"Gestalt: Proximity", renderer:'proximity', good:'A', prompt:"Which form better pairs labels with fields?", diff:2},
+  {law:"Gestalt: Similarity", renderer:'similarity', good:'A', prompt:"Which button set communicates consistent semantics?", diff:2},
+  {law:"Gestalt: Common Region", renderer:'commonRegion', good:'B', prompt:"Which layout more clearly groups related tags?", diff:2},
+  // Twist 1 — both are bad
+  {law:"Fitts's Law", renderer:'fitts', good:null, prompt:"Sometimes neither follows the law. Do you spot the issues?", diff:3, twist:true,
+    keywords:["small","distance","far","edge","target","spacing","reach","cursor","thumb"]},
+  {law:"Miller's Law", renderer:'miller', good:'A', prompt:"Which approach better manages working-memory load?", diff:3},
+  {law:"Jakob's Law", renderer:'jakob', good:'A', prompt:"Which header/search layout is more conventionally placed?", diff:4},
+  {law:"Law of Prägnanz", renderer:'pragnanz', good:'A', prompt:"Which layout produces a simpler, clearer hierarchy?", diff:4},
+  // Twist 2 — both are bad
+  {law:"Postel's Law", renderer:'postel', good:null, prompt:"Do both variants mishandle validation? Call it out for bonus.", diff:4, twist:true,
+    keywords:["format","rigid","strict","forgiving","accept","variants","whitespace","dash","parens","robust"]},
+  {law:"Tesler's Law", renderer:'tesler', good:'A', prompt:"Which settings page distributes complexity more wisely?", diff:5},
+  {law:"Hick's Law", renderer:'hick', good:'A', prompt:"Which reorganization reduces decision time for experts and novices?", diff:5}
+];
+
+const TOTAL_TIME = 12.0; // seconds per round
+
+// ---- Game State ---------------------------------------------------------
+const state = {
+  idx: 0,
+  score: 0,
+  timer: TOTAL_TIME,
+  running: false,
+  roundResults: [] // {idx, pick, correct, time, pts, rationale, explanation?}
+};
+
+const els = {
+  mockA: document.getElementById('mockA'),
+  mockB: document.getElementById('mockB'),
+  pickA: document.getElementById('pickA'),
+  pickB: document.getElementById('pickB'),
+  bothBad: document.getElementById('bothBadBtn'),
+  bothWrap: document.getElementById('bothBadWrap'),
+  prompt: document.getElementById('prompt'),
+  score: document.getElementById('score'),
+  timeBar: document.getElementById('timeBar'),
+  timeText: document.getElementById('timeText'),
+  roundN: document.getElementById('roundN'),
+  roundTotal: document.getElementById('roundTotal'),
+  lawChip: document.getElementById('lawChip'),
+  difficultyChip: document.getElementById('difficultyChip'),
+  levelName: document.getElementById('levelName'),
+  twistChip: document.getElementById('twistChip'),
+  feedback: document.getElementById('feedback'),
+  toast: document.getElementById('toast'),
+  explainDlg: document.getElementById('explainDlg'),
+  explainTxt: document.getElementById('explainTxt'),
+  closeDlg: document.getElementById('closeDlg'),
+  submitExplain: document.getElementById('submitExplain'),
+  cancelExplain: document.getElementById('cancelExplain'),
+  defsDlg: document.getElementById('defsDlg'),
+  defsBody: document.getElementById('defsBody'),
+  closeDefs: document.getElementById('closeDefs'),
+};
+
+els.roundTotal.textContent = ROUNDS.length;
+els.twistChip.style.display = 'inline-flex';
+
+// Build definitions modal content once
+(function buildDefs(){
+  const frag = document.createDocumentFragment();
+  Object.entries(LAWS).forEach(([law, def])=>{
+    const box = el('div',{class:'reviewItem'},[
+      el('div',{style:{fontWeight:'700', marginBottom:'6px'}}, law),
+      el('div',{class:'small'}, def)
+    ]);
+    frag.append(box);
+  });
+  els.defsBody.append(frag);
+})();
+
+// ---- Rendering a Round --------------------------------------------------
+function renderRound(){
+  const r = ROUNDS[state.idx];
+  // header chips
+  els.lawChip.textContent = `Law: ${r.law}`;
+  els.difficultyChip.textContent = `Difficulty: ${DIFF[r.diff]||r.diff}`;
+  els.levelName.textContent = DIFF[r.diff] || r.diff;
+  els.prompt.textContent = r.prompt;
+  els.roundN.textContent = (state.idx+1);
+  els.feedback.classList.add('hidden');
+  els.feedback.innerHTML = '';
+
+  // show/hide both-bad control
+  els.bothWrap.style.visibility = (r.good===null) ? 'visible' : 'hidden';
+
+  // Clear previous mocks
+  els.mockA.innerHTML = '<span class="sideLabel">A</span>';
+  els.mockB.innerHTML = '<span class="sideLabel">B</span>';
+
+  // Draw A/B for this renderer
+  const fn = Renderers[r.renderer];
+  const goodSide = r.good || (Math.random()>0.5?'A':'B'); // for “both bad”, rendering uses either, correctness handled separately
+  const seed = state.idx+1;
+  const res = fn({good:goodSide, seed});
+
+  // Add subtle badges for flavor (not answers)
+  const badgeA = el('span',{class:'badge'}, 'Mockup');
+  const badgeB = el('span',{class:'badge'}, 'Mockup');
+  els.mockA.appendChild(res.A); els.mockA.appendChild(badgeA);
+  els.mockB.appendChild(res.B); els.mockB.appendChild(badgeB);
+
+  // Attach click on entire mock as well as button
+  els.mockA.onclick = ()=> pick('A');
+  els.mockB.onclick = ()=> pick('B');
+
+  state.running = true;
+  state.timer = TOTAL_TIME;
+  updateTimerUI();
+}
+
+function toast(msg, ms=1500){
+  els.toast.textContent = msg;
+  els.toast.style.display = 'block';
+  setTimeout(()=> els.toast.style.display = 'none', ms);
+}
+
+// ---- Timer --------------------------------------------------------------
+let rafId = null; let lastTs = null;
+function tick(ts){
+  if(!state.running){ lastTs = ts; rafId = requestAnimationFrame(tick); return; }
+  if(lastTs==null) lastTs = ts;
+  const dt = (ts - lastTs)/1000;
+  lastTs = ts;
+  state.timer = Math.max(0, state.timer - dt);
+  updateTimerUI();
+  if(state.timer<=0){
+    state.running = false;
+    showFeedback(false, "Time’s up. No points this round.");
+  }
+  rafId = requestAnimationFrame(tick);
+}
+function updateTimerUI(){
+  const pct = Math.max(0, Math.min(1, state.timer / TOTAL_TIME));
+  els.timeBar.style.width = (pct*100).toFixed(1)+'%';
+  els.timeText.textContent = state.timer.toFixed(1)+'s';
+}
+
+// ---- Picking an answer --------------------------------------------------
+function computePoints(correct){
+  if(!correct) return 0;
+  // Faster = more points. Floor at 100.
+  const raw = Math.round(1000 * (state.timer / TOTAL_TIME));
+  return Math.max(100, raw);
+}
+
+function showFeedback(correct, message, rationale, extra={}){
+  const r = ROUNDS[state.idx];
+  els.feedback.classList.remove('hidden');
+  const color = correct ? 'var(--good)' : 'var(--bad)';
+  els.feedback.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
+      <div class="pill" style="border-color:${color}; color:${color}; background:transparent"> ${correct?'✓ Correct':'✕ Incorrect'} </div>
+      <div>${message||''}</div>
+    </div>
+    <div class="small"><strong>Target law:</strong> <span class="lawHint" title="${LAWS[r.law]||''}">${r.law}</span></div>
+    ${rationale?`<div class="small" style="margin-top:8px"><strong>Why:</strong> ${rationale}</div>`:''}
+    ${extra.bonus?`<div class="small" style="margin-top:8px; color:#c9ffd6"><strong>Bonus:</strong> +${extra.bonus} for a solid explanation.</div>`:''}
+    ${state.idx < ROUNDS.length-1
+      ? `<div style="margin-top:10px"><button class="btn" id="nextBtn">Next (N)</button></div>`
+      : `<div style="margin-top:10px"><button class="btn" id="finishBtn">See Results</button></div>`}
+  `;
+  const nextBtn = document.getElementById('nextBtn');
+  if(nextBtn) nextBtn.onclick = nextRound;
+  const finishBtn = document.getElementById('finishBtn');
+  if(finishBtn) finishBtn.onclick = showResults;
+}
+
+function pick(side){
+  if(!state.running) return;
+  const r = ROUNDS[state.idx];
+  if(r.good===null){
+    // It was a "both are bad" round — nudge toward the special button
+    toast("Hint: this is a twist round — try “Both are bad (explain)”.");
+    return;
+  }
+  state.running = false;
+  const correct = (side === r.good);
+  const pts = computePoints(correct);
+  if(correct) state.score += pts;
+  els.score.textContent = state.score;
+
+  const rationale = Renderers[r.renderer]({good:r.good}).rationale;
+  showFeedback(correct, correct?`Nice! +${pts} points.`:`Not quite. Correct was ${r.good}.`, rationale);
+  state.roundResults.push({
+    idx: state.idx, pick: side, correct, time: +(TOTAL_TIME - state.timer).toFixed(2), pts, rationale
+  });
+}
+
+// ---- Both-bad flow ------------------------------------------------------
+els.bothBad.onclick = ()=>{
+  const r = ROUNDS[state.idx];
+  if(!state.running) return;
+  if(r.good!==null){ toast("This one expects A or B."); return; }
+  // Open explain modal
+  els.explainTxt.value='';
+  els.explainPrompt.textContent = `In terms of ${r.law}, what’s wrong with both options? Mention at least one concrete issue.`;
+  els.explainDlg.showModal();
+};
+els.closeDlg.onclick = ()=> els.explainDlg.close();
+els.cancelExplain.onclick = ()=> els.explainDlg.close();
+els.submitExplain.onclick = ()=>{
+  const r = ROUNDS[state.idx];
+  if(!state.running) return;
+  const txt = (els.explainTxt.value||'').trim().toLowerCase();
+  if(txt.length < 12){ toast("Add a bit more detail for the bonus."); return; }
+  // lightweight keyword match for fuller bonus
+  const keys = (r.keywords||[]);
+  let hits = 0;
+  keys.forEach(k=>{ if(txt.includes(k)) hits++; });
+  const quality = hits >= 2 ? 'great' : (hits===1 ? 'ok' : 'weak');
+  // award bonus scaled by time & quality
+  const base = Math.round(500 * (state.timer / TOTAL_TIME));
+  const bonus = Math.max(100, Math.round(base * (quality==='great'?1.0:quality==='ok'?0.7:0.5)));
+  state.score += bonus;
+  els.score.textContent = state.score;
+  state.running = false;
+  els.explainDlg.close();
+  const rationale = "Good catch: both variants violate the target law in meaningful ways.";
+  showFeedback(true, `You called out the twist. +${bonus} bonus points.`, rationale, {bonus});
+  state.roundResults.push({
+    idx: state.idx, pick:'both-bad', correct:true, time:+(TOTAL_TIME - state.timer).toFixed(2), pts:bonus,
+    rationale, explanation: txt
+  });
+};
+
+// ---- Next / Results -----------------------------------------------------
+function nextRound(){
+  if(state.idx < ROUNDS.length-1){
+    state.idx++;
+    renderRound();
+  } else {
+    showResults();
+  }
+}
+
+function showResults(){
+  // Build a summary in place of the game UI
+  document.querySelector('main').innerHTML = `
+    <div class="prompt">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px">
+        <div>
+          <div style="font-size:18px; font-weight:700">Results</div>
+          <div class="small">Final score: <strong>${state.score}</strong> · Rounds: ${ROUNDS.length}</div>
+        </div>
+        <div><button class="btn" id="restartBtn">Play Again</button> <button class="btn" id="defsBtn">Quick Definitions (D)</button></div>
+      </div>
+    </div>
+    <div class="result">
+      ${state.roundResults.map((rr,i)=>{
+        const r = ROUNDS[rr.idx];
+        const correctLabel = rr.correct ? '✓' : '✕';
+        const color = rr.correct ? '#2ecc71' : '#ff6b6b';
+        return `
+          <div class="reviewItem">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px">
+              <div><strong>Round ${i+1}:</strong> ${r.law}</div>
+              <div class="pill" style="color:${color}; border-color:${color}; background:transparent">${correctLabel} ${rr.correct?'Correct':'Incorrect'}</div>
+            </div>
+            <div class="small" style="margin-top:6px"><strong>Prompt:</strong> ${r.prompt}</div>
+            <div class="small" style="margin-top:6px"><strong>Answer:</strong> ${r.good===null?'Both were bad':'Option '+r.good} · <strong>Your pick:</strong> ${rr.pick}</div>
+            <div class="small" style="margin-top:6px"><strong>Time:</strong> ${rr.time}s · <strong>Points:</strong> +${rr.pts}</div>
+            <div class="small" style="margin-top:6px"><strong>Why:</strong> ${rr.rationale}</div>
+            ${rr.explanation? `<div class="small" style="margin-top:6px"><strong>Your explanation:</strong> ${escapeHtml(rr.explanation)}</div>`:''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div class="footerNote">Press <span class="kbd">D</span> to view quick definitions of the laws.</div>
+  `;
+  document.getElementById('restartBtn').onclick = ()=> location.reload();
+  document.getElementById('defsBtn').onclick = ()=> els.defsDlg.showModal();
+}
+
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+}
+
+// ---- Controls -----------------------------------------------------------
+els.pickA.onclick = ()=> pick('A');
+els.pickB.onclick = ()=> pick('B');
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key.toLowerCase()==='a') pick('A');
+  if(e.key.toLowerCase()==='b') pick('B');
+  if(e.key.toLowerCase()==='n'){
+    const r = ROUNDS[state.idx];
+    if(state.running) { toast("Answer first, then next."); return; }
+    nextRound();
+  }
+  if(e.key.toLowerCase()==='d'){
+    if(els.defsDlg.open) els.defsDlg.close();
+    else els.defsDlg.showModal();
+  }
+});
+
+els.closeDefs.onclick = ()=> els.defsDlg.close();
+
+// ---- Boot ---------------------------------------------------------------
+renderRound();
+rafId = requestAnimationFrame(tick);
+
+</script>
+</body>
+</html>
+```
