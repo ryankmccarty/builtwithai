@@ -48,6 +48,63 @@
     .accordion-content {display:none;padding:0 14px 14px}
     .accordion-content pre {white-space:pre-wrap;background:#f8f8f8;padding:12px;border-radius:8px;font-size:0.9rem}
 
+	    .ai-tools {
+    background-color: #faefe7;
+    padding: 60px 20px;
+    font-family: Arial, sans-serif;
+  }
+
+  .ai-tools-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  .ai-tools-header h2 {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #111;
+    margin: 0;
+  }
+
+  .ai-tools-header .tag {
+    background-color: #c4e86b;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+  }
+
+  .tool-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-decoration: none;
+    color: black;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+
+  .tool-card:hover {
+    transform: translateY(-3px);
+    border-color: #c4e86b;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+  }
+
     #prompt-search {margin-bottom:20px;padding:10px;width:100%;border:1px solid var(--line);border-radius:8px;font-size:1rem}
 
     footer{padding:60px 0}
@@ -175,6 +232,30 @@ Reply with: “Please enter your meeting transcript and I will start the analysi
         </div>
       </div>
     </section>
+
+<section class="ai-tools">
+  <div class="ai-tools-header">
+    <h2><span class="tag">For Creatives</span> AI Tool Library</h2>
+  </div>
+  
+  <div class="tools-grid">
+    <a href="#" class="tool-card">LOVABLE</a>
+    <a href="#" class="tool-card">CHATGPT</a>
+    <a href="#" class="tool-card">V0</a>
+    <a href="#" class="tool-card">MIDJOURNEY</a>
+    <a href="#" class="tool-card">RUNWAY</a>
+    <a href="#" class="tool-card">PERPLEXITY</a>
+    <a href="#" class="tool-card">POE</a>
+    <a href="#" class="tool-card">NOTION AI</a>
+    <a href="#" class="tool-card">FIGMA AI</a>
+    <a href="#" class="tool-card">SORA</a>
+    <a href="#" class="tool-card">KREA</a>
+    <a href="#" class="tool-card">CLOUDFLARE AI</a>
+  </div>
+</section>
+
+
+	
   </main>
 
   <footer>
