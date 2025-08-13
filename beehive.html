@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Beehive Construction Simulator</title>
+<style>
+  :root{
+    --bg:#0f1221;
+    --panel:#161a33;
+    --panel-2:#1b2041;
+    --text:#e9ecff;
+    --muted:#9aa3d9;
+    --accent:#ffd166;
+    --accent-2:#ff9f1c;
+    --good:#4cd899;
+    --warn:#ff6b6b;
+    --grid:#2a2f57;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background: radial-gradient(1200px 800px at 70% 10%, #171b34 0%, #0e1122 55%, #0a0c19 100%);
+    color:var(--text);
+    font:14px/1.3 Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    overflow:hidden;
+  }
+  .app{
+    display:grid;
+    grid-template-columns: 320px 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "header header"
+      "panel  canvas";
+    height:100%;
+    gap:12px;
+    padding:12px;
+  }
+  header{
+    grid-area:header;
+    display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.0));
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:16px;
+    padding:10px 14px;
+    backdrop-filter: blur(6px);
+  }
+  header h1{
+    font-size:16px;margin:0;font-weight:600;letter-spacing:.3px;
+  }
+  header .badges{
+    display:flex; gap:8px; align-items:center;
+  }
+  .badge{
+    padding:4px 8px;border-radius:10px;background:var(--panel);border:1px solid rgba(255,255,255,.06);color:var(--muted);
+  }
+  .panel{
+    grid-area:panel;
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:16px;
+    padding:14px;
+    display:flex;flex-direction:column;gap:14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.04);
+    overflow:auto;
+  }
+  .section{background:var(--panel-2);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px}
+  .section h2{margin:0 0 10px 0;font-size:13px; color:#c9d1ff; font-weight:600; letter-spacing:.2px}
+  .row{display:grid;grid-template-columns: 1fr auto; gap:8px; align-items:center; margin:10px 0}
+  .slider{
+    -webkit-appearance:none; appearance:none; width:100%;
+    height:6px;border-radius:999px;background:linear-gradient(90deg, #2b2f56, #3a3f73);
+    outline:none;
+  }
+  .slider::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:18px;height:18px;border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #ffe8b4 35%, #ffca3a 60%, #f59f00 100%);
+    border:1px solid rgba(0,0,0,.35);
+    box-shadow: 0 2px 10px rgba(255,193,7,.35), inset 0 0 0 2px rgba(255,255,255,.35);
+    cursor:pointer;
+  }
+  .value{min-width:44px;text-align:right;color:var(--muted)}
+  .controls{display:flex; gap:8px; flex-wrap:wrap}
+  button{
+    background:linear-gradient(180deg,#232750,#1b1f42);
+    border:1px solid rgba(255,255,255,.08);
+    color:var(--text);
+    padding:9px 12px;border-radius:12px;cursor:pointer;
+    font-weight:600;
+    transition:transform .08s ease, box-shadow .2s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,.2);
+  }
+  button:hover{transform: translateY(-1px)}
+  button:active{transform: translateY(0)}
+  .accent{background:linear-gradient(180deg,#ffd166,#ffb703); color:#1c1406; border:1px solid #c98a00}
+  .muted{opacity:.8}
+  .legend{display:grid;grid-template-columns:1fr 1fr; gap:8px; font-size:12px; color:var(--muted)}
+  .legend .item{display:flex; align-items:center; gap:8px}
+  .dot{width:14px;height:14px;border-radius:50%}
+  .hex{width:18px; height:16px; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background:#889}
+  .canvas-wrap{
+    grid-area:canvas; position:relative; border-radius:16px; overflow:hidden;
+    border:1px solid rgba(255,255,255,.08);
+    background:
+      radial-gradient(900px 700px at 30% 10%, rgba(255,255,255,.05), rgba(255,255,255,0)) ,
+      repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 40px),
+      radial-gradient(1200px 800px at 50% 70%, #0b0f22, #070a16 55%, #050712 100%);
+  }
+  canvas{position:absolute; inset:0; width:100%; height:100%}
+  .hint{
+    position:absolute; left:12px; bottom:12px; padding:8px 10px; border-radius:10px;
+    background:rgba(0,0,0,.35); color:#cfd6ff; font-size:12px; backdrop-filter: blur(6px);
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .kpi{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+  }
+  .kpi .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:10px;
+  }
+  .kpi .label{font-size:11px; color:var(--muted)}
+  .kpi .num{font-size:16px; font-weight:700; margin-top:4px}
+  .small{font-size:12px; color:var(--muted)}
+  a { color: #b6c2ff; text-decoration: none; border-bottom: 1px dotted rgba(182,194,255,.4)}
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🐝 Beehive Construction Simulator</h1>
+      <div class="badges">
+        <div class="badge">Canvas + Hex Grid</div>
+        <div class="badge">Agent Paths</div>
+        <div class="badge">Resource-Driven Growth</div>
+      </div>
+    </header>
+
+    <aside class="panel">
+      <div class="section">
+        <h2>Parameters</h2>
+        <div class="row">
+          <label for="colony">Colony Size</label>
+          <div class="value"><span id="colonyVal">120</span></div>
+          <input id="colony" class="slider" type="range" min="20" max="400" step="10" value="120" />
+        </div>
+        <div class="row">
+          <label for="resources">Resource Availability</label>
+          <div class="value"><span id="resVal">0.60</span></div>
+          <input id="resources" class="slider" type="range" min="0" max="1" step="0.01" value="0.60" />
+        </div>
+        <div class="controls">
+          <button id="toggle" class="accent">Pause</button>
+          <button id="reset">Reset</button>
+          <button id="seed" class="muted">Reseed Flowers</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>What you’re seeing</h2>
+        <div class="legend">
+          <div class="item"><div class="hex" style="background:#39407a"></div> Empty wax cell</div>
+          <div class="item"><div class="hex" style="background:#5d66b8"></div> Fresh-built cell</div>
+          <div class="item"><div class="hex" style="background:#ffcf5b"></div> Honey stored</div>
+          <div class="item"><div class="dot" style="background:#f7e37b"></div> Worker bee</div>
+          <div class="item"><div class="dot" style="background:#9be69b"></div> Flower (nectar)</div>
+          <div class="item"><div class="dot" style="background:#78c8ff"></div> Water source</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Stats</h2>
+        <div class="kpi">
+          <div class="card">
+            <div class="label">Cells Built</div>
+            <div class="num" id="cellsKPI">0</div>
+          </div>
+          <div class="card">
+            <div class="label">Honey Stored</div>
+            <div class="num" id="honeyKPI">0</div>
+          </div>
+          <div class="card">
+            <div class="label">Active Workers</div>
+            <div class="num" id="workersKPI">0</div>
+          </div>
+        </div>
+        <div class="small" style="margin-top:8px">
+          Bees leave the hive, forage at flowers, return along remembered waypoints, and deposit nectar as honey.
+          New hex cells are constructed when nearby activity and resources cross a threshold.
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Tips</h2>
+        <ul class="small" style="margin:0 0 0 16px">
+          <li>Increase <b>Resource Availability</b> to speed up growth and honey storage.</li>
+          <li>Increase <b>Colony Size</b> for more workers and faster construction.</li>
+          <li>Click <b>Reseed Flowers</b> to redistribute nectar fields.</li>
+          <li>Pan with drag, zoom with scroll (trackpad or mouse wheel).</li>
+        </ul>
+      </div>
+    </aside>
+
+    <div class="canvas-wrap">
+      <canvas id="c"></canvas>
+      <div class="hint">Drag to pan • Scroll to zoom • Bees glow brighter when carrying nectar</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===== Canvas & Resize =====
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  function sizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * DPR);
+    canvas.height = Math.floor(rect.height * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  new ResizeObserver(sizeCanvas).observe(canvas);
+  sizeCanvas();
+
+  // ===== UI Elements =====
+  const colonyRange = document.getElementById('colony');
+  const colonyVal = document.getElementById('colonyVal');
+  const resRange = document.getElementById('resources');
+  const resVal = document.getElementById('resVal');
+  const btnToggle = document.getElementById('toggle');
+  const btnReset = document.getElementById('reset');
+  const btnSeed = document.getElementById('seed');
+
+  const cellsKPI = document.getElementById('cellsKPI');
+  const honeyKPI = document.getElementById('honeyKPI');
+  const workersKPI = document.getElementById('workersKPI');
+
+  // ===== World Coords & Camera =====
+  let camera = { x: 0, y: 0, scale: 1 };
+  const state = {
+    running: true,
+    time: 0,
+    bees: [],
+    flowers: [],
+    waters: [],
+    cells: new Map(), // key "q,r" -> cell
+    buildFrontier: new Set(), // axial neighbors eligible to build
+    colonySize: parseInt(colonyRange.value,10),
+    resourceAvailability: parseFloat(resRange.value),
+    honeyTotal: 0,
+  };
+
+  colonyVal.textContent = state.colonySize;
+  resVal.textContent = state.resourceAvailability.toFixed(2);
+
+  // ===== Hex Math (pointy top axial) =====
+  const HEX = { size: 14 }; // radius
+  const SQRT3 = Math.sqrt(3);
+  const axialToPixel = (q, r) => {
+    const x = HEX.size * (SQRT3 * q + SQRT3/2 * r);
+    const y = HEX.size * (3/2 * r);
+    return { x, y };
+  };
+  const pixelToAxial = (x, y) => {
+    const q = (SQRT3/3 * x - 1/3 * y) / HEX.size;
+    const r = (2/3 * y) / HEX.size;
+    return axialRound(q, r);
+  };
+  const axialRound = (q, r) => {
+    let x = q, z = r, y = -x - z;
+    let rx = Math.round(x), ry = Math.round(y), rz = Math.round(z);
+    const x_diff = Math.abs(rx - x), y_diff = Math.abs(ry - y), z_diff = Math.abs(rz - z);
+    if (x_diff > y_diff && x_diff > z_diff) rx = -ry - rz;
+    else if (y_diff > z_diff) ry = -rx - rz;
+    else rz = -rx - ry;
+    return { q: rx, r: rz };
+  };
+  const neighbors = [
+    {q:1,r:0}, {q:1,r:-1}, {q:0,r:-1},
+    {q:-1,r:0},{q:-1,r:1}, {q:0,r:1}
+  ];
+  const key = (q,r)=>`${q},${r}`;
+
+  // ===== Data Structures =====
+  function createCell(q,r){
+    const p = axialToPixel(q,r);
+    return {
+      q,r, x:p.x, y:p.y,
+      built: false, // wax structure exists
+      age: 0,
+      honey: 0, // 0..1 per cell
+      activity: 0, // decays; used to decide new construction
+    };
+  }
+
+  function addCellIfNeeded(q,r){
+    const k = key(q,r);
+    if (!state.cells.has(k)){
+      state.cells.set(k, createCell(q,r));
+    }
+    return state.cells.get(k);
+  }
+
+  // Seed initial nucleus
+  function seedHive(radius=2){
+    state.cells.clear();
+    state.buildFrontier.clear();
+    for(let rq=-radius; rq<=radius; rq++){
+      for(let rr=Math.max(-radius, -rq-radius); rr<=Math.min(radius, -rq+radius); rr++){
+        const cell = addCellIfNeeded(rq, rr);
+        cell.built = true;
+        cell.age = Math.random()*10;
+      }
+    }
+    // Frontier are neighbors around built nuclei
+    for (const c of state.cells.values()){
+      if (!c.built) continue;
+      neighbors.forEach(n=>{
+        const q = c.q + n.q, r = c.r + n.r;
+        const neighborCell = addCellIfNeeded(q,r);
+        if (!neighborCell.built) state.buildFrontier.add(key(q,r));
+      });
+    }
+  }
+
+  // Flowers & water sources
+  function seedResources(){
+    const W = canvas.width / DPR, H = canvas.height / DPR;
+    const span = 800;
+    function randInRing(radMin, radMax){
+      const a = Math.random()*Math.PI*2;
+      const r = radMin + Math.random()*(radMax-radMin);
+      return { x: Math.cos(a)*r, y: Math.sin(a)*r };
+    }
+    state.flowers = [];
+    state.waters = [];
+    const density = 10 + Math.floor(30 * state.resourceAvailability);
+    for (let i=0;i<density;i++){
+      const p = randInRing(100, span);
+      state.flowers.push({x:p.x, y:p.y, nectar: 0.6 + 0.8*Math.random()*state.resourceAvailability});
+    }
+    for (let i=0;i<Math.max(1, Math.floor(3*state.resourceAvailability)); i++){
+      const p = randInRing(200, span);
+      state.waters.push({x:p.x, y:p.y, vol: 1});
+    }
+  }
+
+  // Bees
+  function spawnBees(){
+    state.bees = [];
+    const N = state.colonySize;
+    for (let i=0;i<N;i++){
+      state.bees.push({
+        x: 0 + (Math.random()-0.5)*10,
+        y: 0 + (Math.random()-0.5)*10,
+        vx: 0, vy: 0,
+        carrying: 0, // nectar load 0..1
+        target: null, // {type:'flower'|'water'|'home', ref:index}
+        memory: [], // waypoints for return (crumbs)
+        phase: 'forage', // forge -> return -> deposit -> build-assist
+        jitter: Math.random()*1000,
+      });
+    }
+  }
+
+  // ===== Initialization =====
+  seedHive(2);
+  seedResources();
+  spawnBees();
+
+  // ===== Simulation =====
+  function chooseTarget(bee){
+    // Tilt toward nearest flower with nectar (depends on resourceAvailability)
+    if (Math.random() < 0.85){
+      let best = null, bestD=1e9, idx=-1;
+      for (let i=0;i<state.flowers.length;i++){
+        const f = state.flowers[i];
+        if (f.nectar <= 0.02) continue;
+        const dx=f.x-bee.x, dy=f.y-bee.y, d=dx*dx+dy*dy;
+        if (d<bestD){ bestD=d; best=f; idx=i; }
+      }
+      if (best) { bee.target = {type:'flower', ref:idx}; return; }
+    }
+    // Else wander toward water or random ring
+    if (state.waters.length && Math.random()<0.5){
+      const i = (Math.random()*state.waters.length)|0;
+      bee.target = {type:'water', ref:i};
+    } else {
+      const a = Math.random()*Math.PI*2, r = 200+Math.random()*600;
+      bee.target = {type:'wander', x: Math.cos(a)*r, y: Math.sin(a)*r};
+    }
+  }
+
+  function depositAtHome(bee){
+    // Deposit into central cells: pick a ring near origin that is built
+    let best=null, bestD=1e9;
+    for (const c of state.cells.values()){
+      if (!c.built) continue;
+      const dx=c.x, dy=c.y, d=dx*dx+dy*dy;
+      if (d<bestD){ bestD=d; best=c; }
+    }
+    if (best){
+      const amount = Math.min(bee.carrying, 0.05 + 0.1*Math.random());
+      best.honey = Math.min(1, best.honey + amount);
+      bee.carrying = Math.max(0, bee.carrying - amount);
+      best.activity += 0.4;
+      state.honeyTotal += amount;
+    }
+  }
+
+  function considerConstruction(){
+    // Cells on frontier are promoted to built when activity + resources exceed threshold
+    const threshold = 2.5 - 1.5*state.resourceAvailability; // easier with more resources
+    const toBuild = [];
+    for (const k of state.buildFrontier){
+      const c = state.cells.get(k);
+      // Activity from neighbor cells
+      let neighAct = 0, neighHoney = 0, neighBuilt = 0;
+      neighbors.forEach(n=>{
+        const nb = state.cells.get(key(c.q+n.q, c.r+n.r));
+        if (nb && nb.built){ neighAct += nb.activity; neighHoney += nb.honey; neighBuilt++; }
+      });
+      const score = (neighAct * 0.6) + (neighBuilt * 0.3) + (neighHoney * 0.4);
+      if (score > threshold) toBuild.push(c);
+    }
+    toBuild.forEach(c=>{
+      c.built = true; c.age = 0;
+      state.buildFrontier.delete(key(c.q,c.r));
+      neighbors.forEach(n=>{
+        const nb = addCellIfNeeded(c.q+n.q, c.r+n.r);
+        if (!nb.built) state.buildFrontier.add(key(nb.q, nb.r));
+      });
+    });
+  }
+
+  // ===== Camera interaction =====
+  let isDragging = false, last = {x:0,y:0};
+  canvas.addEventListener('mousedown', e=>{ isDragging=true; last={x:e.clientX,y:e.clientY}; });
+  window.addEventListener('mouseup', ()=> isDragging=false);
+  window.addEventListener('mousemove', e=>{
+    if(!isDragging) return;
+    const dx=e.clientX-last.x, dy=e.clientY-last.y;
+    camera.x += dx / camera.scale;
+    camera.y += dy / camera.scale;
+    last={x:e.clientX,y:e.clientY};
+  });
+  canvas.addEventListener('wheel', e=>{
+    const { left, top } = canvas.getBoundingClientRect();
+    const mx = (e.clientX - left);
+    const my = (e.clientY - top);
+    const worldX = (mx / camera.scale) - camera.x;
+    const worldY = (my / camera.scale) - camera.y;
+    const mult = Math.exp(-e.deltaY * 0.001);
+    const newScale = Math.min(2.5, Math.max(0.35, camera.scale * mult));
+    // Zoom around mouse
+    camera.x = (mx/newScale) - worldX;
+    camera.y = (my/newScale) - worldY;
+    camera.scale = newScale;
+    e.preventDefault();
+  }, { passive:false });
+
+  // ===== UI wiring =====
+  colonyRange.addEventListener('input', e=>{
+    state.colonySize = parseInt(e.target.value,10);
+    colonyVal.textContent = state.colonySize;
+    // Live-resize swarm
+    const diff = state.colonySize - state.bees.length;
+    if (diff>0){
+      for(let i=0;i<diff;i++){
+        state.bees.push({
+          x: 0, y: 0, vx:0, vy:0, carrying:0, target:null, memory:[], phase:'forage', jitter:Math.random()*1000
+        });
+      }
+    } else if (diff<0){
+      state.bees.splice(diff); // negative truncates end
+    }
+  });
+  resRange.addEventListener('input', e=>{
+    state.resourceAvailability = parseFloat(e.target.value);
+    resVal.textContent = state.resourceAvailability.toFixed(2);
+  });
+  btnToggle.addEventListener('click', ()=>{
+    state.running = !state.running;
+    btnToggle.textContent = state.running ? 'Pause' : 'Play';
+  });
+  btnReset.addEventListener('click', ()=>{
+    seedHive(2);
+    seedResources();
+    spawnBees();
+    camera = {x:0,y:0,scale:1};
+    state.honeyTotal = 0;
+  });
+  btnSeed.addEventListener('click', ()=>{
+    seedResources();
+  });
+
+  // ===== Drawing =====
+  function withCamera(fn){
+    ctx.save();
+    const W = canvas.width / DPR, H = canvas.height / DPR;
+    ctx.translate(W/2, H/2);
+    ctx.scale(camera.scale, camera.scale);
+    ctx.translate(camera.x, camera.y);
+    fn();
+    ctx.restore();
+  }
+
+  function drawHex(x,y,fill,strokeAlpha=0.2){
+    const s = HEX.size;
+    const h = s * 0.8660254038; // sqrt(3)/2
+    ctx.beginPath();
+    ctx.moveTo(x + 0,     y - s);
+    ctx.lineTo(x + h,     y - s*0.5);
+    ctx.lineTo(x + h,     y + s*0.5);
+    ctx.lineTo(x + 0,     y + s);
+    ctx.lineTo(x - h,     y + s*0.5);
+    ctx.lineTo(x - h,     y - s*0.5);
+    ctx.closePath();
+    if (fill){ ctx.fillStyle = fill; ctx.fill(); }
+    ctx.strokeStyle = `rgba(255,255,255,${strokeAlpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function colorForCell(c){
+    if (!c.built) return 'rgba(0,0,0,0)';
+    // Base wax color by age
+    const t = Math.min(1, c.age/80);
+    const base = mixColor([57,64,122],[93,102,184], t); // cool wax tones
+    // Honey overlay
+    if (c.honey>0){
+      const honey = mixColor([255,198,73],[255,207,91], Math.min(1,c.honey));
+      return overlay(base, honey, 0.55*Math.min(1,c.honey+0.1));
+    }
+    return rgb(base);
+  }
+
+  function mixColor(a,b,t){
+    return [ lerp(a[0],b[0],t), lerp(a[1],b[1],t), lerp(a[2],b[2],t) ];
+  }
+  function rgb(arr){ return `rgb(${arr[0]|0},${arr[1]|0},${arr[2]|0})`; }
+  function overlay(base, top, alpha){
+    const r = (1-alpha)*base[0] + alpha*top[0];
+    const g = (1-alpha)*base[1] + alpha*top[1];
+    const b = (1-alpha)*base[2] + alpha*top[2];
+    return rgb([r,g,b]);
+  }
+  const lerp = (a,b,t)=>a+(b-a)*t;
+
+  function drawBackgroundGrid(){
+    withCamera(()=>{
+      // soft radial
+      const grad = ctx.createRadialGradient(0,0,10, 0,0, 1200);
+      grad.addColorStop(0, 'rgba(255,255,255,.02)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(0,0,1200,0,Math.PI*2); ctx.fill();
+
+      // reference circle for hive boundary
+      ctx.strokeStyle = 'rgba(255,255,255,.04)';
+      ctx.lineWidth = 2/camera.scale;
+      ctx.beginPath(); ctx.arc(0,0, (HEX.size*9), 0, Math.PI*2); ctx.stroke();
+    });
+  }
+
+  function drawCells(){
+    withCamera(()=>{
+      // Only draw cells visible in viewport for performance
+      const W = canvas.width / DPR, H = canvas.height / DPR;
+      const pad = 100 / camera.scale;
+      const vx0 = -W/2/camera.scale - camera.x - pad;
+      const vy0 = -H/2/camera.scale - camera.y - pad;
+      const vx1 =  W/2/camera.scale - camera.x + pad;
+      const vy1 =  H/2/camera.scale - camera.y + pad;
+
+      for (const c of state.cells.values()){
+        if (!c.built) continue;
+        if (c.x < vx0 || c.x > vx1 || c.y < vy0 || c.y > vy1) continue;
+        drawHex(c.x, c.y, colorForCell(c), 0.12);
+      }
+    });
+  }
+
+  function drawResources(){
+    withCamera(()=>{
+      // Flowers
+      state.flowers.forEach(f=>{
+        const r = 4 + 6 * Math.max(0, Math.min(1,f.nectar));
+        ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(155,230,155,.9)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1/camera.scale; ctx.stroke();
+      });
+      // Water
+      state.waters.forEach(w=>{
+        const r = 6;
+        ctx.beginPath(); ctx.arc(w.x, w.y, r, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(120,200,255,.85)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1/camera.scale; ctx.stroke();
+      });
+      // Hive center
+      ctx.beginPath(); ctx.arc(0,0, 10, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 1/camera.scale; ctx.stroke();
+    });
+  }
+
+  function drawBees(){
+    withCamera(()=>{
+      state.bees.forEach(bee=>{
+        const size = 2.5 + 2.0*bee.carrying;
+        // trail (memory)
+        ctx.globalAlpha = 0.12;
+        ctx.beginPath();
+        for (let i=0;i<bee.memory.length;i++){
+          const p = bee.memory[i];
+          if (i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1/camera.scale; ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        // glow
+        if (bee.carrying>0.05){
+          ctx.shadowColor = 'rgba(255,240,150,.6)';
+          ctx.shadowBlur = 12;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        ctx.beginPath(); ctx.arc(bee.x, bee.y, size, 0, Math.PI*2);
+        ctx.fillStyle = bee.carrying>0.05 ? '#f7e37b' : '#d9d5ff';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // tiny direction cue
+        ctx.beginPath();
+        ctx.moveTo(bee.x, bee.y);
+        ctx.lineTo(bee.x + bee.vx*0.8, bee.y + bee.vy*0.8);
+        ctx.strokeStyle = 'rgba(255,255,255,.35)';
+        ctx.lineWidth = 1/camera.scale;
+        ctx.stroke();
+      });
+    });
+  }
+
+  // ===== Update Loop =====
+  function update(dt){
+    state.time += dt;
+
+    // Bees
+    const maxSpeed = 60; // px/s
+    const seek = (bee, tx, ty, strength=1)=>{
+      const dx = tx-bee.x, dy = ty-bee.y;
+      const d = Math.hypot(dx,dy)+1e-6;
+      const ux = dx/d, uy = dy/d;
+      bee.vx += ux * 40 * strength * dt;
+      bee.vy += uy * 40 * strength * dt;
+    };
+
+    state.bees.forEach(bee=>{
+      bee.jitter += dt;
+      // Targeting
+      if (!bee.target) chooseTarget(bee);
+      if (bee.phase==='forage' && bee.carrying>0.8){
+        bee.phase='return'; bee.target={type:'home'};
+      }
+      if (bee.phase==='return' && bee.carrying<=0.02){
+        bee.phase='forage'; bee.target=null; bee.memory=[];
+      }
+
+      // Waypoint memory (for breadcrumb trail)
+      if (bee.phase==='forage' && Math.random()<0.2){
+        bee.memory.push({x:bee.x, y:bee.y});
+        if (bee.memory.length>40) bee.memory.shift();
+      }
+
+      // Behavior
+      if (bee.target?.type==='flower'){
+        const f = state.flowers[bee.target.ref];
+        if (!f || f.nectar<=0.02){ bee.target=null; }
+        else {
+          seek(bee, f.x, f.y, 1.0);
+          // harvest if near
+          const d = Math.hypot(bee.x-f.x, bee.y-f.y);
+          if (d<10){
+            const take = Math.min(0.5*dt*(0.5+state.resourceAvailability), f.nectar, 1-bee.carrying);
+            bee.carrying += take;
+            f.nectar -= take;
+            if (bee.carrying>=0.95) { bee.phase='return'; bee.target={type:'home'}; }
+          }
+        }
+      } else if (bee.target?.type==='water'){
+        const w = state.waters[bee.target.ref];
+        if (!w){ bee.target=null; }
+        else {
+          seek(bee, w.x, w.y, 0.8);
+          const d = Math.hypot(bee.x-w.x, bee.y-w.y);
+          if (d<10 && bee.carrying<0.2){
+            bee.carrying += Math.min(0.2*dt, 0.2);
+          }
+        }
+      } else if (bee.target?.type==='wander'){
+        seek(bee, bee.target.x, bee.target.y, 0.6);
+        const d = Math.hypot(bee.x-bee.target.x, bee.y-bee.target.y);
+        if (d<15) bee.target=null;
+      } else if (bee.target?.type==='home' || !bee.target){
+        // Head home (0,0) using light attraction
+        seek(bee, 0, 0, 0.9);
+        if (Math.hypot(bee.x, bee.y)<20 && bee.carrying>0){
+          depositAtHome(bee);
+        }
+      }
+
+      // Gentle noise
+      bee.vx += (Math.sin(bee.jitter*2.3)+Math.cos(bee.jitter*1.7))*3*dt;
+      bee.vy += (Math.cos(bee.jitter*2.1)-Math.sin(bee.jitter*1.9))*3*dt;
+
+      // Speed clamp & integrate
+      const sp = Math.hypot(bee.vx, bee.vy);
+      if (sp>maxSpeed){ bee.vx *= maxSpeed/sp; bee.vy *= maxSpeed/sp; }
+      bee.x += bee.vx * dt;
+      bee.y += bee.vy * dt;
+      // friction
+      bee.vx *= (1 - 1.5*dt);
+      bee.vy *= (1 - 1.5*dt);
+
+      // Stimulate nearby cells activity to encourage construction
+      const a = pixelToAxial(bee.x, bee.y);
+      const c = addCellIfNeeded(a.q, a.r);
+      c.activity += 0.2;
+    });
+
+    // Cell aging and activity decay
+    for (const c of state.cells.values()){
+      if (!c.built) continue;
+      c.age += dt * 1.5;
+      c.activity *= (1 - 1.5*dt);
+      c.honey *= (1 - 0.02*dt); // slow consumption/usage
+    }
+
+    // Consider new construction based on activity/resources
+    considerConstruction();
+
+    // KPIs
+    let builtCount=0, honey=0;
+    for (const c of state.cells.values()){
+      if (c.built){ builtCount++; honey+=c.honey; }
+    }
+    cellsKPI.textContent = builtCount.toLocaleString();
+    honeyKPI.textContent = honey.toFixed(1);
+    workersKPI.textContent = state.bees.length.toString();
+  }
+
+  // ===== Main Loop =====
+  let lastT = performance.now();
+  function frame(now){
+    const dt = Math.min(0.033, (now-lastT)/1000); // cap dt for stability
+    lastT = now;
+
+    // Clear
+    ctx.fillStyle = '#0b0f22';
+    ctx.fillRect(0,0, canvas.width/DPR, canvas.height/DPR);
+
+    drawBackgroundGrid();
+
+    if (state.running) update(dt);
+
+    drawCells();
+    drawResources();
+    drawBees();
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ===== Helpers =====
+  // initial camera slight zoom
+  setTimeout(()=>{ camera.scale = 1.05; }, 100);
+
+  // make sure sliders reflect values after reset
+  function refreshUI(){
+    colonyRange.value = state.colonySize;
+    colonyVal.textContent = state.colonySize;
+    resRange.value = state.resourceAvailability;
+    resVal.textContent = state.resourceAvailability.toFixed(2);
+  }
+  refreshUI();
+
+})();
+</script>
+</body>
+</html>
